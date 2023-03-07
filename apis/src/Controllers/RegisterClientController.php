@@ -4,6 +4,7 @@ namespace Crm\Apis\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\gb\underwriting\Policy_details;
+use Crm\Apis\Traits\ApiResponse;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -11,9 +12,13 @@ use App\Client;
 use App\Country;
 use Carbon\Carbon;
 
+use DB;
+
 class RegisterClientController extends Controller{
+    use apiResponse;
+
     public function index(Request $request){
-        // DB::beginTransaction();
+        DB::beginTransaction();
         try {
             $validated = Validator::make($request->all(),[
                 // "name" => 'required',
@@ -91,9 +96,7 @@ class RegisterClientController extends Controller{
                                         ->whereNotNull('id_number')->count();
                         
                         if($cnt_id > 0){
-                            return response()->json([
-                                'message' => 'Client with that Identity already exists'
-                            ]);
+                            return $this->errorResponse('Client with that Id number already exists');
                         }
 
                     break;
@@ -108,9 +111,7 @@ class RegisterClientController extends Controller{
 
                         if($pinno>0)
                         {
-                            return response()->json([
-                                'message' => 'Client with that Pin already exists'
-                            ]);
+                            return $this->errorResponse('Client with that Pin already exists');
                         }
 
                     break;
@@ -138,18 +139,19 @@ class RegisterClientController extends Controller{
                 }
             }
 
+            $resp = ['client_no' => $clnt_no];
 
-            return response()->json([
-                'message' => 'Client integrated successfully',
-                'client_no' => $clnt_no
-            ]);
+            DB::commit();
+            return $this->successResponse($resp,'Client integrated successfully', 201);
+            // return response()->json([
+            //     'message' => 'Client integrated successfully',
+            //     'client_no' => $clnt_no
+            // ]);
 
         }
-        catch(\Throwable $e){
-            return response()->json([
-                'message' => 'Failed',
-                'errors' => $e
-            ]);
+        catch(AimsException $e){
+            DB::rollBack();
+            return $e;
         }
 
             

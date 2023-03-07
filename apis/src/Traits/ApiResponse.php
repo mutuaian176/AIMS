@@ -13,12 +13,11 @@ trait ApiResponse{
         ],$statusCode);
     }
 
-    public function errorResponse($data,$msg=null,$statusCode=Response::HTTP_BAD_REQUEST)
+    public function errorResponse($msg=null,$statusCode=Response::HTTP_BAD_REQUEST)
     {
         return response()->json([
             'status' => 'AIMS002',
-            'message' => $msg,
-            'data' => $data
+            'message' => $msg
         ],$statusCode);
         
     }
