@@ -21,12 +21,11 @@ class RegisterClientController extends Controller{
         DB::beginTransaction();
         try {
             $validated = Validator::make($request->all(),[
-                // "name" => 'required',
                 "client_type" => 'required',
                 // "full_name" => 'required',
-                // "pin_no" => 'required',
-                // "email" => 'required',
-                // "address_1" => 'required',
+                "pin_no" => 'required',
+                "email" => 'required',
+                "address_1" => 'required',
             ]);
 
             if ($validated->fails()) {
@@ -58,6 +57,7 @@ class RegisterClientController extends Controller{
             $client->alpha3_country_code=$alpha3_country_code;
             $client->country_id= $country_id;
             $client->bank_account_no = $request->account_no[0];
+            $client->bank_account_name = $request->account_name[0];
             $client->bank_code = $request->bank_code[0];
             $client->branch_code = $request->branch[0];
             $client->contact_firstname=$request->contact_firstname;
@@ -105,7 +105,7 @@ class RegisterClientController extends Controller{
                         $client->name=$request->corporate_name;
                         $client->incorporation_cert=$request->incorporation_cert;
                         $client->identity_type='C';
-                        // $client->id_number=$request->incorporation_cert;
+                        $client->id_number=$request->incorporation_cert;
                         $pinno = Client::where('pin_number',$request->pin_no)
                                         ->whereNotNull('pin_number')->count();
 

@@ -87,7 +87,8 @@ class GeneralApisController extends Controller{
     //policy details
     public function policyDetails($policy_no){
         try {
-            $data = Polmaster::select('policy_no','endorse_no','period_from','period_to','sum_insured','renewal_premium','status')->where('policy_no', $policy_no)->first();
+            $data = Polmaster::select('policy_no','endorse_no','period_from','period_to','sum_insured','renewal_premium','status')
+                ->where('policy_no', $policy_no)->first();
 
             return $this->successResponse($data,'Successful');
         } catch (\Throwable $e) {
@@ -187,7 +188,7 @@ class GeneralApisController extends Controller{
     //bank details
     public function banks(){
         try {
-            $data = Banks::all();
+            $data = Banks::select('bank_code', 'description')->get();
 
             return $this->successResponse($data,'Successful');
         } catch (\Throwable $e) {

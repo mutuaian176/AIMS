@@ -10,7 +10,6 @@ use Illuminate\Support\ServiceProvider;
 class CrmServiceProvider extends ServiceProvider{
     
     public function boot(){
-        // dd("idyebyu");
         $this->loadRoutesFrom(__DIR__.'/../Routes/api.php');
     }
 
@@ -18,4 +17,5 @@ class CrmServiceProvider extends ServiceProvider{
 
     }
 }
+
 ?>
