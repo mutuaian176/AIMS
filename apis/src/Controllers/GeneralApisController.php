@@ -1,27 +1,28 @@
 <?php
 namespace Crm\Apis\Controllers;
-use App\Http\Controllers\Controller;
-use Crm\Apis\Traits\ApiResponse;
-use Crm\Apis\Exceptions\AimsException;
-use Illuminate\Http\Request;
-use App\ClassModel;
+use DB;
+use App\Agmnf;
+use App\Banks;
+use App\Cause;
+use App\Clhmn;
+use App\Title;
 use App\Branch;
 use App\Client;
-use App\Agmnf;
-use App\Pipstmp;
-use App\Polmaster;
-use App\Clhmn;
-use App\Cause;
 use App\Clparam;
-use App\Vehiclemodelyear;
 use App\Country;
+use App\Pipstmp;
+use App\Currency;
+use App\Polmaster;
+use App\ClassModel;
 use App\Occupation;
-use App\Title;
-use App\Banks;
 use App\Bankbranches;
 use App\Identity_type;
+use App\Vehiclemodelyear;
+use Illuminate\Http\Request;
+use Crm\Apis\Traits\ApiResponse;
 
-use DB;
+use App\Http\Controllers\Controller;
+use Crm\Apis\Exceptions\AimsException;
 
 
 class GeneralApisController extends Controller{
@@ -206,6 +207,17 @@ class GeneralApisController extends Controller{
             return $e->render($e);
         }
     }
+
+    //currency
+    public function currency(){
+       try {
+           $data = Currency::all();
+
+           return $this->successResponse($data,'Successful');
+       } catch (\Throwable $e) {
+           return $e->render($e);
+       }
+   }
 
 }
 

@@ -2,6 +2,7 @@
 
 use Crm\Apis\Controllers\RegisterClientController;
 use Crm\Apis\Controllers\GeneralApisController;
+use Crm\Apis\Controllers\UnderwritingController;
 
 
 Route::prefix('aims/api/v1/')->group(function(){
@@ -17,12 +18,14 @@ Route::prefix('aims/api/v1/')->group(function(){
         Route::get('countries', [GeneralApisController::class, 'countries']);
         Route::get('occupations', [GeneralApisController::class, 'occupations']);
         Route::get('title', [GeneralApisController::class, 'title']);
+        Route::get('currency', [GeneralApisController::class, 'currency']);
         Route::get('banks', [GeneralApisController::class, 'banks']);
         Route::get('bank/branches', [GeneralApisController::class, 'bankBranches']);
         Route::get('identity/type', [GeneralApisController::class, 'identityType']);
         Route::get('claim/{claim_no}', [GeneralApisController::class, 'claimDetails']);
         Route::get('policy/{policy_no}', [GeneralApisController::class, 'policyDetails']);
         Route::post('register/client', [RegisterClientController::class, 'index']);
+        Route::post('generate/policy', [UnderwritingController::class, 'generatePolicy']);
     });
 });
 

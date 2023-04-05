@@ -71,7 +71,7 @@ class RegisterClientController extends Controller{
             $client->e_mail=$request->email;
             $client->crm_flag = 'Y';
             //$client->vat_exempt=$request->vat_exempt;
-            //$client->user_str=Auth::user()->user_name;
+            $client->user_str='crm';
             
             switch ($request->client_type)
             {
@@ -143,10 +143,6 @@ class RegisterClientController extends Controller{
 
             DB::commit();
             return $this->successResponse($resp,'Client integrated successfully', 201);
-            // return response()->json([
-            //     'message' => 'Client integrated successfully',
-            //     'client_no' => $clnt_no
-            // ]);
 
         }
         catch(AimsException $e){
