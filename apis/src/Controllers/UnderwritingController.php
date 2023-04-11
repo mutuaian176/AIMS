@@ -2,6 +2,7 @@
 namespace Crm\Apis\Controllers;
 
 use DateTime;
+use Crm\Apis\Controllers\MotorRiskController;
 use App\Tran0;
 use App\Client;
 use App\Dtran0;
@@ -21,6 +22,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\gb\underwriting\Policy;
 use App\Http\Controllers\gb\underwriting\Policy_details;
+use App\Http\Requests\NewMotorRequest;
 
 
 class UnderwritingController extends Controller{
@@ -28,8 +30,8 @@ class UnderwritingController extends Controller{
     public function generatePolicy(Request $request){
         DB::beginTransaction();
         try {
-            $cls = ClassModel::where('class', $request->class)->first();
-            // return $this->successResponse(['class' => $cls],'Client integrated successfully', 201);
+            $request->merge(['cls' => 60]);
+            $cls = ClassModel::where('class', $request->cls)->first();
                     
             $uw_year = date('Y', strtotime((string) $request->period_from));
     
@@ -56,7 +58,7 @@ class UnderwritingController extends Controller{
             $policy_obj = new Policy();
             $new_endt_renewal_no = $policy_obj->generate_pol(
                 $request->branchpol,
-                $request->class,
+                $request->cls,
                 $request->type,
                 $account_year,
                 $account_month
@@ -98,7 +100,7 @@ class UnderwritingController extends Controller{
             }
     
             // /*get class department*/
-            $class = ClassModel::where('class', $request->class)->first();
+            $class = ClassModel::where('class', $request->cls)->first();
             $dept = (string) $class->dept;
     
             /*get number of days of cover*/
@@ -108,11 +110,11 @@ class UnderwritingController extends Controller{
             $days_of_cover = $cover_from->diffInDays($cover_to);
     
     
-            $prop_number = Classbr::where('class', $request->class)->get(['prop_serial']);
+            $prop_number = Classbr::where('class', $request->cls)->get(['prop_serial']);
             $prop_no = $prop_number[0]->prop_serial;
-            $dprop_no = Classbr::where('class', $request->class);
+            $dprop_no = Classbr::where('class', $request->cls);
     
-            $dprop_no = Classbr::where('class', $request->class)->increment('prop_serial', (int) '1');
+            $dprop_no = Classbr::where('class', $request->cls)->increment('prop_serial', (int) '1');
     
     
             $seq_no = Dcontrol::generateTranseqNumber($request->type,$polno->policy_no);
@@ -139,7 +141,7 @@ class UnderwritingController extends Controller{
             $dcontrol->prop_date=Carbon::now();
             $dcontrol->branch=$request->branchpol;
             $dcontrol->agent=$request->agentpol;
-            $dcontrol->class=$request->class;
+            $dcontrol->class=$request->cls;
             $dcontrol->user_str='crm';
     
             $dcontrol->period_from=$request->period_from;
@@ -163,7 +165,7 @@ class UnderwritingController extends Controller{
                 $dcontrol->cov_period_to=$request->period_to;
                 $dcontrol->endt_days = $request->t_cover_days;
                 
-                $shortTermRate = $ $policy_obj->verifyShortTermRate($request->class,$request->t_cover_days);
+                $shortTermRate = $ $policy_obj->verifyShortTermRate($request->cls,$request->t_cover_days);
     
             }else{
                 $dcontrol->period_from=$request->period_from;
@@ -237,7 +239,7 @@ class UnderwritingController extends Controller{
             $dcontrol->location = 0;
             $dcontrol->time = Carbon::now();
 
-            $dcontrol->company_class_code = $request->class;
+            $dcontrol->company_class_code = $request->cls;
             $dcontrol->account_year = $account_year;
             $dcontrol->account_month = $account_month;
             $dcontrol->name = trim($insured[0]->name);
@@ -272,14 +274,24 @@ class UnderwritingController extends Controller{
             $resp = ['policy_no'=>$new_endt_renewal_no];
 
             DB::commit();
+
+            $risk_motor = new MotorRiskController;
+        
+            $req = new NewMotorRequest($request->all());
+            $req->merge(['endt_renewal_no'=>$new_endt_renewal_no]);
+            return $risk_motor->save_vehicle($req);
             
-            return $this->successResponse($resp,'Policy underwritten successfully', 201);
+            // return $this->successResponse($resp,'Policy underwritten successfully', 201);
 
         } catch (\Throwable $e) {
             dd($e);
             DB::rollback();
             return $this->errorResponse($e);
         }
+
+        
+
+        // return ["ian"=>"mutua"];
 
     }
 }
