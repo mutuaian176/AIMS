@@ -2,8 +2,6 @@
 namespace Crm\Apis\Controllers;
 
 use DateTime;
-use Crm\Apis\Controllers\MotorRiskController;
-use Crm\Apis\Rules\NewMotorRequest;
 use App\Tran0;
 use App\Client;
 use App\Dtran0;
@@ -19,8 +17,11 @@ use App\ClassModel;
 use Illuminate\Http\Request;
 use Crm\Apis\Traits\ApiResponse;
 use Illuminate\Support\Facades\DB;
+use Crm\Apis\Rules\NewMotorRequest;
 use App\Http\Controllers\Controller;
+use Crm\Apis\Controllers\ExpressDebit;
 use Illuminate\Support\Facades\Validator;
+use Crm\Apis\Controllers\MotorRiskController;
 use App\Http\Controllers\gb\underwriting\Policy;
 use App\Http\Controllers\gb\underwriting\Policy_details;
 
@@ -288,13 +289,25 @@ class UnderwritingController extends Controller{
                     }
 
                     $reg_risk = $risk_motor->save_vehicle($motor_req);
+
+                    $resp['risk_details'] = $reg_risk['status'];
+
                 }
 
             } else {
                 # code...
             }
             DB::commit();
-            
+
+            $debit = new ExpressDebit;
+            $debit_request = new Request;
+            $debit_request->merge([
+                'endt_renewal_no' => $new_endt_renewal_no,
+                "interactive" => "N"
+            ]);
+
+            $debit_res = $debit->express_debit($debit_request);
+            $resp['debit_status'] = $debit_res['debit_status'];
 
             // return ;
             if ($reg_risk['status'] == 1) {

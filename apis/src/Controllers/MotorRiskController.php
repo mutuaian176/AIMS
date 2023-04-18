@@ -29,7 +29,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
-use App\Http\Requests\NewMotorRequest;
+use Crm\Apis\Rules\NewMotorRequest;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\gb\underwriting\Risk;
 use App\Http\Controllers\gb\underwriting\Policy;
@@ -132,10 +132,11 @@ class MotorRiskController extends Controller{
                 'status' => 1,
                 'message' => 'Motor details saved successfully'
             ];
+            
         } catch (\Throwable $e) {
             throw $e;
         }
-        
+
     }
 }
 
