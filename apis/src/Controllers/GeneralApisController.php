@@ -589,9 +589,13 @@ class GeneralApisController extends Controller{
             $class = ClassModel::where('class', $policy->class)->first();
 
             if ($class->motor_policy == 'Y') {
-                $risk = Modtlmast::select('reg_no', 'make', 'model', 'engine_no', 'chassis_no')
-                        ->where('policy_no', $request->policy_no)
-                        ->where('status', 'ACT')
+                $risk = Modtlmast::select('modtlmast.reg_no', 'modtlmast.make', 'modtlmast.model', 'modtlmast.engine_no', 
+                        'modtlmast.chassis_no', 'modtlsumm.sum_insured', 'modtlsumm.annual_premium')
+                        ->join('modtlsumm', function($query){
+                            $query->on('modtlsumm.reg_no', '=', 'modtlmast.reg_no');
+                        })
+                        ->where('modtlmast.policy_no', $request->policy_no)
+                        ->where('modtlmast.status', 'ACT')
                         ->get();
             }else{
                 $risk = Polsect::select('name', 'plot_no', 'town', 'street','sum_insured', 'annual_premium')
