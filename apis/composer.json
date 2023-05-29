@@ -1,0 +1,24 @@
+{
+    "name": "crm/apis",
+    "description": "GB CRM APIS",
+    "type": "package",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Crm\\Apis\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "ian"
+        }
+    ],
+    "require": {},
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Crm\\Apis\\Providers\\CrmServiceProvider"
+            ]
+        }
+    }
+}
