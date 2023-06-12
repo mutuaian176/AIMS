@@ -30,8 +30,8 @@ class RegisterClientController extends Controller{
                 "address_3" => 'required',
                 "district" => 'required',
                 "street" => 'required',
-                "agentpol" => 'required',
-                "branchpol" => 'required',
+                // "agentpol" => 'required',
+                // "branchpol" => 'required',
             ]);
 
             if ($validated->fails()) {
@@ -103,7 +103,6 @@ class RegisterClientController extends Controller{
                         $cnt_id = Client::where('id_number',$request->identity_no)
                                         ->where('identity_type', $request->id_type)
                                         ->count();
-                        // return ['cnt'=>$cnt_id, 'message'=>'not found '.$request->identity_no.' '. $request->id_type];
                         if($cnt_id > 0){
                             return $this->errorResponse('Client with that Id number already exists');
                         }

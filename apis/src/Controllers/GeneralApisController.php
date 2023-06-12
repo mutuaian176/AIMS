@@ -211,11 +211,12 @@ class GeneralApisController extends Controller{
             }
             $exists = Client::where('client_number', $request->client_no)->exists();
 
-            $data= [];
             if ($exists) {
-                return $this->successResponse($data,$msg='Client found');
+                $data= ["clientFound"=>True];
+                return $this->successResponse($data,$msg='Client Exists');
             } else {
-                return $this->successResponse($data,$msg='Client Not found',$aimstatus="AIMS003");
+                $data= ["clientFound"=>False];
+                return $this->successResponse($data,$msg='Client Does Not Exist',$aimstatus="AIMS003");
             }
         } catch (\Throwable $e) {
             return $e->render($e);
@@ -237,11 +238,12 @@ class GeneralApisController extends Controller{
             }
             $exists = Client::where('id_number', $request->client_id)->exists();
 
-            $data= [];
             if ($exists) {
-                return $this->successResponse($data,$msg='Client found');
+                $data= ["clientFound"=>True];
+                return $this->successResponse($data,$msg='Client Exists');
             } else {
-                return $this->successResponse($data,$msg='Client Not found',$aimstatus="AIMS003");
+                $data= ["clientFound"=>False];
+                return $this->successResponse($data,$msg='Client Does not exist',$aimstatus="AIMS003");
             }
         } catch (\Throwable $e) {
             return $e->render($e);
@@ -265,11 +267,12 @@ class GeneralApisController extends Controller{
             }
             $exists = Client::where('pin_number', $request->client_pin)->exists();
 
-            $data= [];
             if ($exists) {
-                return $this->successResponse($data,$msg='Client found');
+                $data= ["clientFound"=>True];
+                return $this->successResponse($data,$msg='Client Exists');
             } else {
-                return $this->successResponse($data,$msg='Client Not found',$aimstatus="AIMS003");
+                $data= ["clientFound"=>False];
+                return $this->successResponse($data,$msg='Client Does Not Exist',$aimstatus="AIMS003");
             }
         } catch (\Throwable $e) {
             return $e->render($e);
@@ -279,7 +282,7 @@ class GeneralApisController extends Controller{
     /***********get all agents***********/
     public function agents(){
         try {
-            $data = Agmnf::select('name', 'branch', 'agent')->get();
+            $data = Agmnf::select('name', 'branch as branchNumber', 'agent as agentNumber')->get();
 
             return $this->successResponse($data,'Successful');
         } catch (\Throwable $e) {
@@ -301,12 +304,14 @@ class GeneralApisController extends Controller{
                     'error'  => $validated->errors(),
                  ]);
             }
-            $data = Agmnf::select('name', 'stop_flag', 'vat_on_comm', 'pin_number')
+            $data = Agmnf::select('name', 'stop_flag as active', 'vat_on_comm', 'pin_number')
                     ->where('agent', $request->agent)
                     ->where('branch', $request->branch)
                     ->get();
 
             return $this->successResponse($data,'Successful');
+        } catch (AimsException $e) {
+            return $e->render($e);
         } catch (\Throwable $e) {
             return $e->render($e);
         }
@@ -328,11 +333,13 @@ class GeneralApisController extends Controller{
             }
             $exists = Agmnf::where('agent', $request->agent)
                     ->where('branch', $request->branch)->exists();
-            $data= [];
+            
             if ($exists) {
-                return $this->successResponse($data,$msg='Agent found');
+                $data= ["agentFound"=>True];
+                return $this->successResponse($data,$msg='Agent Exists');
             } else {
-                return $this->successResponse($data,$msg='Agent Not found',$aimstatus="AIMS003");
+                $data= ["agentFound"=>False];
+                return $this->successResponse($data,$msg='Agent Does Not Exist',$aimstatus="AIMS003");
             }
         } catch (\Throwable $e) {
             return $e->render($e);
@@ -493,7 +500,6 @@ class GeneralApisController extends Controller{
 
             return $this->successResponse($data,'Successful');
         } catch (\Throwable $e) {
-            dd($e);
             return $e->render($e);
         }
     }
@@ -541,8 +547,23 @@ class GeneralApisController extends Controller{
     /***********motor premium rates***********/
     public function motorPremiumRates(){
         try {
-            $data = Motorsect::select('class', 'item_code', 'grp_code', 'covertype', 'classtype', 'basis', 'rate_amount',
-                        'minimum_premium')->get();
+            $data = Motorsect::select('motorsect.class', 'item_code', 'motorsect.grp_code as group_code', 'motorprem_grp.description as group_description', 
+                        'motorsect.covertype as covertype_code', 'covertype.cover_description', 'classtype.classtype', 'classtype.description as classtype_description',
+                        'basis', 'rate_amount',
+                        'minimum_premium')
+                        ->join('motorprem_grp', function($query){
+                            $query->on('motorprem_grp.grp_code','=','motorsect.grp_code');
+                        })
+                        ->join('covertype', function($query1){
+                            $query1->on('covertype.cover','=','motorsect.covertype');
+                        })
+                        ->join('classtype', function($query2){
+                            $query2->on('classtype.class','=','motorsect.class');
+                        })
+                        ->join('classtype', function($query3){
+                            $query3->on('classtype.classtype','=','motorsect.classtype');
+                        })
+                        ->get();
 
             return $this->successResponse($data,'Successful');
         } catch (\Throwable $e) {
@@ -599,14 +620,13 @@ class GeneralApisController extends Controller{
                         ->get();
             }else{
                 $risk = Polsect::select('name', 'plot_no', 'town', 'street','sum_insured', 'annual_premium')
-                ->where('policy_no', $request->policy_no)
-                ->get();
+                        ->where('policy_no', $request->policy_no)
+                        ->get();
             }
             $risk = ["risk_items"=>$risk];
 
             return $this->successResponse($risk,'Successful');
         } catch (\Throwable $e) {
-            dd($e);
             return $e->render($e);
         }
     }
@@ -639,8 +659,10 @@ class GeneralApisController extends Controller{
                     ->where('status', 'ACT')->exists();
             $data= [];
             if ($exists) {
+                $data= ["regNoFound"=>True];
                 return $this->successResponse($data,$msg='Vehicle active');
             } else {
+                $data= ["regNoFound"=>False];
                 return $this->successResponse($data,$msg='Vehicle Not active',$aimstatus="AIMS003");
             }
         } catch (\Throwable $e) {
@@ -663,17 +685,18 @@ class GeneralApisController extends Controller{
             }
             $exists = Modtlmast::where('chassis_no', $request->chassis_no)
                     ->where('status', 'ACT')->exists();
-            $data= [];
+            
             if ($exists) {
+                $data= ["chassisFound"=>True];
                 return $this->successResponse($data,$msg='Vehicle active');
             } else {
+                $data= ["chassisFound"=>False];
                 return $this->successResponse($data,$msg='Vehicle Not active',$aimstatus="AIMS003");
             }
         } catch (\Throwable $e) {
             return $e->render($e);
         }
     }
-    
     
     /***********verify Engine number***********/
     public function verifyVehicleEngine(Request $request){
@@ -690,10 +713,12 @@ class GeneralApisController extends Controller{
             }
             $exists = Modtlmast::where('engine_no', $request->engine_no)    
                     ->where('status', 'ACT')->exists();
-            $data= [];
+            
             if ($exists) {
+                $data= ["engineFound"=>True];
                 return $this->successResponse($data,$msg='Vehicle active');
             } else {
+                $data= ["engineFound"=>False];
                 return $this->successResponse($data,$msg='Vehicle Not active',$aimstatus="AIMS003");
             }
         } catch (\Throwable $e) {
@@ -701,9 +726,7 @@ class GeneralApisController extends Controller{
         }
     }
     
-    
-    
-    /***********verify Engine number***********/
+    /***********verify policy number***********/
     public function verifyPolicy(Request $request){
         try {
             $validated = Validator::make($request->all(),[

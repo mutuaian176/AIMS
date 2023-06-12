@@ -291,8 +291,8 @@ class UnderwritingController extends Controller{
                     $motor_req = new NewMotorRequest($risk);
     
                     $motor_req->merge([
-                        'endt_renewal_no'=>$new_endt_renewal_no,
-                        'trailer'=>'N',
+                        'endt_renewal_no' => $new_endt_renewal_no,
+                        'trailer' => 'N',
                         'cls' => $cls->class
                     ]);
                     
