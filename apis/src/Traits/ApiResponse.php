@@ -4,20 +4,21 @@ namespace Crm\Apis\Traits;
 use Symfony\Component\HttpFoundation\Response;
 
 trait ApiResponse{
-    public function successResponse($data,$msg=null,$statusCode=200)
+    public function successResponse($data,$msg=null, $aimstatus="AIMS001", $statusCode=200)
     {
         return response()->json([
-            'status' => 'AIMS001',
+            'status' => $aimstatus,
             'message' => $msg,
             'data' =>$data
         ],$statusCode);
     }
 
-    public function errorResponse($msg=null,$statusCode=Response::HTTP_BAD_REQUEST)
+    public function errorResponse($data,$msg="Failed",$aimstatus="AIMS002",$statusCode=Response::HTTP_BAD_REQUEST)
     {
         return response()->json([
-            'status' => 'AIMS002',
-            'message' => $msg
+            'status' => $aimstatus,
+            'message' => $msg,
+            'data' =>$data
         ],$statusCode);
         
     }

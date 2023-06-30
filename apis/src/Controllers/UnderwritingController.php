@@ -2,6 +2,7 @@
 namespace Crm\Apis\Controllers;
 
 use DateTime;
+use App\Agmnf;
 use App\Tran0;
 use App\Client;
 use App\Dtran0;
@@ -31,7 +32,34 @@ class UnderwritingController extends Controller{
     public function generatePolicy(Request $request){
         DB::beginTransaction();
         try {
+            
+            $validated = Validator::make($request->policy,[
+                "agentpol" => 'required',
+                "branchpol" => 'required',
+                "cls" => 'required',
+                "period_from" => 'required',
+                "period_to" => 'required',
+                "type" => 'required',
+                "bustype" => 'required',
+                "ast" => 'required',
+                "currency" => 'required',
+                "client_no" => 'required'
+            ]);
+
+            if ($validated->fails()) {
+                 return response()->json([
+                    'message' => 'Validation failed',
+                    'error'  => $validated->errors(),
+                 ]);
+            }
             $pol_det = $request->policy;
+
+            /************validate class************/
+            $class_exist = $this->validateClass($pol_det['cls']);
+            if ($class_exist['status'] == 0) {
+                return $this->errorResponse($class_exist['message']);
+            }
+
             $cls = ClassModel::where('class', $pol_det['cls'])->first();
                   
             $uw_year = date('Y', strtotime((string) $pol_det['period_from']));
@@ -44,12 +72,12 @@ class UnderwritingController extends Controller{
                 $renewal = new DateTime((string) $pol_det['period_to']);
             }
     
-            /*dcon_no */
+            /***********dcon_no ***********/
             $transaction_no = Tran0::where('rec_no', 0)->get(['tran_no']);
             $tran_no = $transaction_no[0]->tran_no;
             $tran0 = Tran0::where('rec_no', 0)->increment('tran_no', (int) '1');
             
-            /* get dtrans_no and period */
+            /*********** get dtrans_no and period ***********/
             $doc_trans = Dtran0::where('rec_no', 0)->get(['dtran_no', 'account_month', 'account_year']);
             $dtran_no = $doc_trans[0]->dtran_no;
             $account_month = $doc_trans[0]->account_month;
@@ -57,6 +85,18 @@ class UnderwritingController extends Controller{
             $dtran0 = Dtran0::where('rec_no', 0)->increment('dtran_no', (int) '1');
 
             $policy_obj = new Policy();
+            
+            /************validate client************/
+            $client_exist = $this->validateClient($pol_det['client_no']);
+            if ($client_exist['status'] == 0) {
+                return $this->errorResponse($client_exist['message']);
+            }
+
+            /************validate branch agent************/
+            $agent_exist = $this->validateAgent($pol_det['branchpol'], $pol_det['agentpol']);
+            if ($agent_exist['status'] == 0) {
+                return $this->errorResponse($agent_exist['message']);
+            }
             $new_endt_renewal_no = $policy_obj->generate_pol(
                 $pol_det['branchpol'],
                 $pol_det['cls'],
@@ -65,45 +105,23 @@ class UnderwritingController extends Controller{
                 $account_month
             );
     
-            /*get currency*/
+            /***********get currency***********/
             $currency = $pol_det['currency'];
             $currency_code = $currency;
 
-            /*get current currency rate*/
-            $currency_rate = 1;
+            /***********get current currency rate***********/
+            $currency_rate = $pol_det['currency_rate'];
     
             $date = Carbon::today(); 
             $currency = Currency::where('currency_code', $currency_code)->get(['currency', 'base_currency']);
             $currency = $currency[0];
+
     
-    
-    
-            if($currency->base_currency == 'Y') {
-                $currency_rate = 1;
-            }else {
-                $count_curr = Curr_ate::where('currency_code', $currency_code)
-                    ->where('rate_date', $date)
-                    ->count();
-    
-    
-                if ($count_curr > 0) {
-                    $rate = Curr_ate::where('currency_code', $currency_code)
-                        ->where('rate_date', $date)
-                        ->get();
-    
-                    $currency_rate = $rate[0]->currency_rate;
-                } else {
-                    // $req = new Request;
-                    $req = request()->merge(['currency' => $currency_code]);
-                    $currency_rate = $policy_obj->yesterdayRate($req);
-                }
-            }
-    
-            // /*get class department*/
+            /***********get class department***********/
             $dept = (string) $cls->dept;
             $motor_policy = trim($cls->motor_policy);
     
-            /*get number of days of cover*/
+            /***********get number of days of cover***********/
             $cover_from = Carbon::parse($pol_det['period_from']);
             $cover_to = Carbon::parse($pol_det['period_to']);
     
@@ -118,19 +136,19 @@ class UnderwritingController extends Controller{
     
     
             $seq_no = Dcontrol::generateTranseqNumber($pol_det['type'],$polno->policy_no);
-            /*insured array*/
+            /***********insured array***********/
     
             $insured = Client::where('client_number', $pol_det['client_no'])->get(['name', 'client_number', 'client_type']);
     
-            /*get doc type */
+            /***********get doc type ***********/
             $document_type = Transtype::where('descr', $pol_det['type'])->get(['doc_type']);
             $doc_type = $document_type[0]->doc_type;
     
-            //type of bus
+            /************type of bus************/
             $bustype_curr = Bustype::where('type_of_bus', trim($pol_det['bustype']))->get();
             $bustype_curr = $bustype_curr[0];
     
-            //add new record to dcontrol
+            /************add new record to dcontrol************/
             $dcontrol = new Dcontrol;
             $dcontrol->dcon_no = $tran_no;
             $dcontrol->transeq_no = $seq_no;
@@ -141,7 +159,7 @@ class UnderwritingController extends Controller{
             $dcontrol->branch=$pol_det['branchpol'];
             $dcontrol->agent=$pol_det['agentpol'];
             $dcontrol->class=$cls->class;
-            $dcontrol->user_str='CRM';
+            $dcontrol->user_str='CRM_USER';
             $dcontrol->period_from=$pol_det['period_from'];
             $dcontrol->period_to=$pol_det['period_to'];
             $dcontrol->old_policy_no = $request->old_pol;
@@ -211,7 +229,7 @@ class UnderwritingController extends Controller{
     
                 $dcontrol->company_share = $pol_det['co_ins_share'];
             } else {
-                $dcontrol->company_share = 100;  //must be 100 for debit and reinsurances to work if no co insurance is done
+                $dcontrol->company_share = 100;
             }
     
             if($charge_vat == 'Y'){
@@ -251,6 +269,7 @@ class UnderwritingController extends Controller{
             $dcontrol->binder_flag = 'N';
             $dcontrol->line_no = 0;
             $dcontrol->renewal_date = $renewal;
+            $dcontrol->expiry_date = $pol_det['period_to'];
             $dcontrol->risk_note_no = $pol_det['risk_note'];
             $dcontrol->external_pol_no = $pol_det['external_pol_number'];
             $dcontrol->fleet = 'N';
@@ -263,20 +282,17 @@ class UnderwritingController extends Controller{
 
             $resp = ['policy_no'=>$new_endt_renewal_no];
             $reg_risk = [];
-            //save mor risk items
+            
             if ($motor_policy == 'Y') {
-                
+                /************save motor risk items************/
                 $risk_det = $request->vehicles;
                 foreach ($risk_det as $risk) {
-                    // dd($risk, "ian");
-
                     $risk_motor = new MotorRiskController;
-            
                     $motor_req = new NewMotorRequest($risk);
     
                     $motor_req->merge([
-                        'endt_renewal_no'=>$new_endt_renewal_no,
-                        'trailer'=>'N',
+                        'endt_renewal_no' => $new_endt_renewal_no,
+                        'trailer' => 'N',
                         'cls' => $cls->class
                     ]);
                     
@@ -309,17 +325,54 @@ class UnderwritingController extends Controller{
             $debit_res = $debit->express_debit($debit_request);
             $resp['debit_status'] = $debit_res['debit_status'];
 
-            // return ;
             if ($reg_risk['status'] == 1) {
                 return $this->successResponse($resp,'Policy underwritten successfully', 201);
             }
 
         } catch (\Throwable $e) {
-            dd($e);
             DB::rollback();
-            return $this->errorResponse($e);
+            return $this->errorResponse($e->getMessage());
         }
 
+    }
+
+    /*********** validate client function***********/
+    public function validateClient($client_no){
+        $client_exists = Client::where('client_number', $client_no)->exists();
+
+        if ($client_exists) {
+            $resp = ['status' => 1];
+        }else{
+            $resp = ['status' => 0, 'message' => 'Client does not exist.'];
+        }
+
+        return $resp;
+    }
+
+    /*********** validate class function***********/
+    public function validateClass($class){
+        $class_exists = ClassModel::where('class', $class)->exists();
+        
+        if ($class_exists) {
+            $resp = ['status' => 1];
+        }else{
+            $resp = ['status' => 0, 'message' => 'Class of business provided is invalid.'];
+        }
+
+        return $resp;
+    }
+
+    /*********** validate agent ***********/
+    public function validateAgent($branch, $agent){
+        $agent_exists = Agmnf::where('branch', $branch)->where('agent', $agent)->exists();
+
+        if ($agent_exists) {
+            $resp = ['status' => 1];
+        }else{
+            $resp = ['status' => 0, 'message' => 'Agent does not exist.'];
+        }
+
+        return $resp;
     }
 }
 

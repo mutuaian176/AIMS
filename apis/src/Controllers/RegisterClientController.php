@@ -22,10 +22,16 @@ class RegisterClientController extends Controller{
         try {
             $validated = Validator::make($request->all(),[
                 "client_type" => 'required',
-                // "full_name" => 'required',
                 "pin_no" => 'required',
                 "email" => 'required',
+                "region" => 'required',
                 "address_1" => 'required',
+                "address_2" => 'required',
+                "address_3" => 'required',
+                "district" => 'required',
+                "street" => 'required',
+                // "agentpol" => 'required',
+                // "branchpol" => 'required',
             ]);
 
             if ($validated->fails()) {
@@ -34,6 +40,7 @@ class RegisterClientController extends Controller{
                     'error'  => $validated->errors(),
                  ]);
             }
+
             $client_gen = new Policy_details;
             $clnt_no=$client_gen->generate_client_number($request);
             
@@ -49,6 +56,8 @@ class RegisterClientController extends Controller{
             $client->region=$request->region;
             $client->district=$request->district;
             $client->phy_loc=$request->street;
+            $client->agent=$request->agentpol;
+            $client->branch=$request->branchpol;
             $client->pin_number=$request->pin_no;
             $client->telephone=$request->phone_1;
             $client->mobile_no=$request->phone_2;
@@ -85,18 +94,27 @@ class RegisterClientController extends Controller{
                         $client->gender=$request->gender;
                         $client->dob=$request->date_of_birth;
                         $client->identity_type=$request->id_type;
-                        if ($request->id_type = 'P') {
+                        if ($request->id_type == 'P') {
                             $client->passport_number=$request->identity_no;
-                        }else{
-                            $client->id_number=$request->identity_no;
                         }
+                        $client->id_number=$request->identity_no;
+                        
 
                         $cnt_id = Client::where('id_number',$request->identity_no)
                                         ->where('identity_type', $request->id_type)
-                                        ->whereNotNull('id_number')->count();
-                        
+                                        ->count();
                         if($cnt_id > 0){
                             return $this->errorResponse('Client with that Id number already exists');
+                        }
+
+                        
+                        
+                        $pinno = Client::where('pin_number',$request->pin_no)
+                                        ->whereNotNull('pin_number')->count();
+
+                        if($pinno > 0)
+                        {
+                            return $this->errorResponse('Client with that Pin already exists');
                         }
 
                     break;
@@ -140,6 +158,7 @@ class RegisterClientController extends Controller{
             }
 
             $resp = ['client_no' => $clnt_no];
+            // dd($resp);
 
             DB::commit();
             return $this->successResponse($resp,'Client integrated successfully', 201);

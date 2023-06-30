@@ -50,6 +50,7 @@ class MotorRiskController extends Controller{
     public function setProps(
         string $endt_renewal_no,
         string $reg_no,
+        int $seat_cap,
         string $cls,
         int $total_sum_insured = 0,
     )
@@ -58,6 +59,7 @@ class MotorRiskController extends Controller{
         $this->_reg_no = $reg_no;
         $this->_endt_renewal_no = $endt_renewal_no;
         $this->_total_sum_insured = $total_sum_insured;
+        $this->_seat_cap = $seat_cap;
     }
 
     public function save_vehicle(NewMotorRequest $request)
@@ -78,7 +80,8 @@ class MotorRiskController extends Controller{
                 endt_renewal_no: $dcontrol->endt_renewal_no,
                 reg_no: $request->reg_no,
                 cls : $request->cls,
-                seat_cap : $request->seat_cap
+                seat_cap : $request->seat_cap,
+                total_sum_insured : $request->sum_insured
             );
             
             $transtype = $dcontrol->trans_type;

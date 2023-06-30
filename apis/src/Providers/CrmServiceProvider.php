@@ -17,5 +17,3 @@ class CrmServiceProvider extends ServiceProvider{
 
     }
 }
-
-?>
